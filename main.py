@@ -107,15 +107,56 @@ def parse_arguments() -> argparse.Namespace:
 
 
 def run_pipeline(
-    input_path: str,
-    output_dir: str,
-    sheet_name: Any,
-    no_pdf: bool,
-    sensitivity: bool,
+    input_path: str = config.INPUT_FILE,
+    output_dir: str = config.OUTPUT_DIR,
+    run_sensitivity: bool = True,
+    run_pca: bool = True,
+    make_pdf: bool = True,
+    sheet_name: Any = config.SHEET_NAME,
+    no_pdf: Optional[bool] = None,
+    sensitivity: Optional[bool] = None,
+    z_threshold: Optional[float] = None,
+    iqr_multiplier: Optional[float] = None,
+    low_max: Optional[float] = None,
+    moderate_max: Optional[float] = None,
+    target_score: Optional[float] = None,
+    include_exposure_in_score: Optional[bool] = None,
 ) -> Dict[str, Any]:
     """
     Executes the complete end-to-end JSSAA analytics and decision pipeline.
+
+    Returns:
+        dict containing:
+        - cleaned_df: Cleaned and scored DataFrame
+        - raw_likert_df: Raw Likert scores before reverse-coding
+        - quality_summary: Ingestion audit and quality metrics
+        - descriptive: Descriptive statistics table
+        - reliability: Psychometric scale reliability results
+        - corr_spearman: Spearman correlation matrix and analysis
+        - corr_pearson: Pearson correlation matrix
+        - group_tests: Inferential demographic hypothesis test results
+        - outliers_table: Suspicious respondents audit table
+        - sensitivity: Sensitivity re-estimation results
+        - decision: Status, baseline, prioritized recommendations, and action plan
+        - report_text: Plain text executive report
+        - report_md: Markdown executive report
+        - files: Dictionary of all generated output file paths
     """
+    # Reconcile flags
+    if no_pdf is not None:
+        make_pdf = not no_pdf
+    if sensitivity is not None:
+        run_sensitivity = sensitivity
+
+    eff_z_threshold = z_threshold if z_threshold is not None else config.Z_THRESHOLD
+    eff_iqr_multiplier = iqr_multiplier if iqr_multiplier is not None else config.IQR_MULTIPLIER
+    eff_low_max = low_max if low_max is not None else config.LOW_MAX
+    eff_moderate_max = moderate_max if moderate_max is not None else config.MODERATE_MAX
+    eff_target_score = target_score if target_score is not None else config.TARGET_SCORE
+    eff_include_exposure = (
+        include_exposure_in_score if include_exposure_in_score is not None else config.INCLUDE_EXPOSURE_IN_SCORE
+    )
+
     logger, log_buffer = setup_logging()
     logger.info("==================================================================")
     logger.info("STARTING JSSAA PIPELINE: Jordan Social & Security Awareness Analysis")
@@ -153,9 +194,9 @@ def run_pipeline(
 
     # 3. Preprocessing & Psychometric Feature Engineering
     preprocessor = Preprocessor(
-        include_exposure_in_score=config.INCLUDE_EXPOSURE_IN_SCORE,
-        low_max=config.LOW_MAX,
-        moderate_max=config.MODERATE_MAX,
+        include_exposure_in_score=eff_include_exposure,
+        low_max=eff_low_max,
+        moderate_max=eff_moderate_max,
     )
     processed_df = preprocessor.transform(cleaned_df)
 
@@ -194,7 +235,7 @@ def run_pipeline(
 
     # 8. Principal Component Analysis (PCA)
     pca_data = {}
-    if config.RUN_PCA:
+    if run_pca:
         logger.info("Performing Principal Component Analysis (PCA)...")
         pca_data = run_pca_analysis(processed_df)
 
@@ -204,8 +245,8 @@ def run_pipeline(
     # 10. Anomaly Detection & Quality Auditing
     logger.info("Auditing data quality anomalies and response patterns...")
     auditor = QualityAuditor(
-        z_threshold=config.Z_THRESHOLD,
-        iqr_multiplier=config.IQR_MULTIPLIER,
+        z_threshold=eff_z_threshold,
+        iqr_multiplier=eff_iqr_multiplier,
         consistency_diff_threshold=config.CONSISTENCY_DIFF_THRESHOLD,
         min_completion_seconds=config.MIN_COMPLETION_SECONDS,
     )
@@ -213,14 +254,14 @@ def run_pipeline(
 
     # Sensitivity Analysis
     sensitivity_results = {}
-    if sensitivity:
+    if run_sensitivity:
         logger.info("Running sensitivity analysis without suspicious respondents...")
         sensitivity_results = auditor.run_sensitivity_analysis(processed_df, suspicious_df)
 
     # 11. Decision & Policy Recommendation Engine
     logger.info("Synthesizing strategic findings and authoring executive decision report...")
     engine = DecisionEngine(
-        target_score=config.TARGET_SCORE,
+        target_score=eff_target_score,
         low_band_escalation_pct=config.LOW_BAND_ESCALATION_PCT,
     )
     system_status = engine.determine_system_status(processed_df)
@@ -253,7 +294,7 @@ def run_pipeline(
     boxplots_path = visualizer.generate_demographic_boxplots(processed_df, filename="demographic_boxplots.png")
     scatter_path = visualizer.generate_perceived_vs_actual_scatter(processed_df, filename="perceived_vs_actual_scatter.png")
     pca_plot_path = ""
-    if config.RUN_PCA and "eigenvalues" in pca_data:
+    if run_pca and "eigenvalues" in pca_data:
         pca_plot_path = visualizer.generate_pca_scree_plot(pca_data, filename="pca_scree_plot.png")
 
     # 13. Artifact Export & Reporting
@@ -279,7 +320,7 @@ def run_pipeline(
     )
 
     pdf_path = None
-    if not no_pdf:
+    if make_pdf:
         pdf_path = reporter.export_pdf(
             system_status=system_status,
             quality_summary=quality_summary,
@@ -293,6 +334,36 @@ def run_pipeline(
     # 14. Save Execution Log
     log_content = log_buffer.getvalue()
     log_file_path = reporter.export_analysis_log(log_content, filename="analysis_log.txt")
+
+    file_dict = {
+        "dashboard": dashboard_path,
+        "radar": radar_path,
+        "boxplots": boxplots_path,
+        "scatter": scatter_path,
+        "pca_scree": pca_plot_path,
+        "excel": excel_path,
+        "report_txt": txt_path,
+        "report_md": md_path,
+        "report_pdf": pdf_path,
+        "log": log_file_path,
+    }
+
+    decision_dict = {
+        "status": system_status["final_status"],
+        "severity": system_status["final_severity"],
+        "baseline": system_status,
+        "recommendations": prioritized_recs,
+        "context_recommendations": context_recs,
+        "demographic_recommendations": demographic_recs,
+        "action_plan": action_plan,
+    }
+
+    spearman_pack = {
+        "matrix": s_corr,
+        "pvalues": s_pval,
+        "top_pairs": top_correlations,
+        "media_exposure_relations": media_exposure_relations,
+    }
 
     logger.info("==================================================================")
     logger.info("JSSAA PIPELINE COMPLETED SUCCESSFULLY.")
@@ -313,6 +384,22 @@ def run_pipeline(
 
     return {
         "status": "SUCCESS",
+        "cleaned_df": processed_df,
+        "raw_likert_df": raw_likert_df,
+        "quality_summary": quality_summary,
+        "descriptive": descriptive_stats_df,
+        "reliability": reliability_results,
+        "corr_spearman": spearman_pack,
+        "corr_pearson": p_corr,
+        "group_tests": group_tests_df,
+        "outliers_table": suspicious_df,
+        "item_outliers": item_outliers_df,
+        "sensitivity": sensitivity_results,
+        "decision": decision_dict,
+        "report_text": txt_report,
+        "report_md": md_report,
+        "files": file_dict,
+        # Backward compatibility aliases
         "system_status": system_status,
         "dashboard_path": dashboard_path,
         "excel_path": excel_path,
@@ -340,4 +427,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

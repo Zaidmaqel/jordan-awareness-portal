@@ -36,9 +36,12 @@ flowchart TD
 
 ```text
 JSSAA/
+├── app.py                      # Streamlit interactive web application (Bilingual AR/EN)
+├── run_app.bat                 # One-click Windows launcher (creates venv & runs Streamlit)
+├── run_app.sh                  # One-click Linux/macOS launcher
 ├── main.py                     # CLI entry point orchestrating the end-to-end pipeline
 ├── config.py                   # Central settings, survey mapping, thresholds, questions
-├── requirements.txt            # Python dependencies
+├── requirements.txt            # Python dependencies (includes Streamlit & Plotly)
 ├── README.md                   # Full academic and deployment documentation
 ├── SURVEY_TEMPLATE.md          # Ready-to-paste Google Forms questionnaire (AR + EN)
 ├── data/
@@ -148,7 +151,45 @@ python main.py [OPTIONS]
 
 ---
 
-## 8. Academic & Statistical Methodology Guide
+## 8. Interactive Web GUI (Streamlit)
+
+JSSAA features a complete, publication-grade interactive web application built with Streamlit:
+
+### Quick Launch Options:
+* **Windows One-Click Launcher:**  
+  Double-click `run_app.bat` (automatically provisions virtual environment, verifies packages, and starts the web UI).
+* **Linux / macOS One-Click Launcher:**  
+  ```bash
+  chmod +x run_app.sh
+  ./run_app.sh
+  ```
+* **Manual Command:**  
+  ```bash
+  streamlit run app.py
+  # Or via Python module:
+  python -m streamlit run app.py
+  ```
+
+### GUI Highlights & Features:
+1. **Bilingual Arabic/English Interface:** Real-time language toggle in the sidebar with native RTL layout and Cairo/Tajawal typography.
+2. **Dynamic Ingestion:** Upload any custom `.xlsx` or `.csv` survey export, or use the preloaded synthetic sample dataset with a single click.
+3. **Interactive Threshold Controls:** Real-time sliders for $Z$-score outliers, IQR multipliers, low/moderate band limits, and target score without modifying config files on disk.
+4. **4 Top KPI Cards:** Instant metrics for sample size ($n$), mean community awareness with 95% CIs, Cronbach's $\alpha$, and % population in the low-risk band.
+5. **Color-Coded Strategic Severity Banner:** Instant status display (Red: High Risk / Critical; Amber: Moderate / Elevated; Green: Stable / Good) with escalation justifications.
+6. **9 Comprehensive Tabs:**
+   - **Overview:** 2x2 publication dashboard (300 DPI) and 5-axis radar profile.
+   - **Data Quality:** Ingestion audit metrics, deduplication summary, and missingness rates.
+   - **Statistics:** Full descriptive table, Cronbach's alpha per dimension, and PCA scree plot.
+   - **Correlations:** Interactive Plotly correlation heatmap and media-exposure analysis.
+   - **Group Disparities:** Interactive demographic breakdown charts and highlighted hypothesis test tables.
+   - **Anomalies:** Suspicious response audit table and sensitivity comparison.
+   - **Recommendations:** Prioritized recommendation cards and 3-Horizon Action Roadmap.
+   - **Executive Report:** In-page rendered Markdown policy brief.
+   - **Export Center:** One-click download buttons for Excel workbook, PDF report, Markdown/TXT briefs, and all high-res PNG plots.
+
+---
+
+## 9. Academic & Statistical Methodology Guide
 
 ### A. Reliability (Cronbach's Alpha)
 Internal consistency is modeled using vectorized sample variance ($ddof=1$):
@@ -188,7 +229,7 @@ Standardized PCA on reverse-coded items evaluates construct validity, eigenvalue
 
 ---
 
-## 9. Comprehensive Output Artifacts Catalog
+## 10. Comprehensive Output Artifacts Catalog
 
 All artifacts are saved to `outputs/`:
 
@@ -207,7 +248,7 @@ All artifacts are saved to `outputs/`:
 
 ---
 
-## 10. Research Ethics & Governance
+## 11. Research Ethics & Governance
 
 1. **Complete Anonymity:**  
    No names, phone numbers, national IDs, email addresses, or IP addresses are gathered or stored.
@@ -220,7 +261,7 @@ All artifacts are saved to `outputs/`:
 
 ---
 
-## 11. Running the Automated Test Suite
+## 12. Running the Automated Test Suite
 
 The test suite validates data ingestion, psychometrics, reverse-coding, anomaly auditing, threshold escalations, and end-to-end integration:
 
