@@ -23,6 +23,7 @@ st.set_page_config(
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cairo:wght@400;600;700;800&display=swap');
+[data-testid="stToolbar"], [data-testid="stDecoration"], [data-testid="manage-app-button"], .viewerBadge_container__r5tak, #MainMenu, header, footer { display: none !important; }
 
     /* Global Dark Slate Canvas */
     .stApp {
