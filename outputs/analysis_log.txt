@@ -1,48 +1,46 @@
-[2026-11-11 16:26:18] [INFO] [JSSAA]: ==================================================================
-[2026-11-11 16:26:18] [INFO] [JSSAA]: STARTING JSSAA PIPELINE: Jordan Social & Security Awareness Analysis
-[2026-11-11 16:26:18] [INFO] [JSSAA]: ==================================================================
-[2026-11-11 16:26:18] [WARNING] [JSSAA]: [INPUT WARNING] Specified input file 'data/survey_responses.xlsx' was not found.
-[2026-11-11 16:26:18] [WARNING] [JSSAA]: Falling back to synthetic sample dataset at 'data/sample_survey_responses.xlsx'.
-[2026-11-11 16:26:18] [INFO] [JSSAA.data_loader]: Loading survey response data from data/sample_survey_responses.xlsx (format: .xlsx)
-[2026-11-11 16:26:19] [INFO] [JSSAA.data_loader]: Raw response records loaded: 245
-[2026-11-11 16:26:19] [INFO] [JSSAA.data_loader]: Removed 5 exact duplicate respondent rows.
-[2026-11-11 16:26:19] [WARNING] [JSSAA.data_loader]: Item 'ME1_news_freq' contained 1 out-of-range value(s); coerced to NaN.
-[2026-11-11 16:26:19] [WARNING] [JSSAA.data_loader]: Item 'RD1_distinguish' contained 1 out-of-range value(s); coerced to NaN.
-[2026-11-11 16:26:19] [WARNING] [JSSAA.data_loader]: Item 'RD5_difficulty' contained 1 out-of-range value(s); coerced to NaN.
-[2026-11-11 16:26:19] [WARNING] [JSSAA.data_loader]: Dropping 1 respondent(s) exceeding missingness threshold (> 20% missing).
-[2026-11-11 16:26:19] [INFO] [JSSAA.data_loader]: Imputed 1 missing value(s) in 'ME1_news_freq' with median 4.0.
-[2026-11-11 16:26:19] [INFO] [JSSAA.data_loader]: Imputed 1 missing value(s) in 'ME3_time_spent' with median 4.0.
-[2026-11-11 16:26:19] [INFO] [JSSAA.data_loader]: Imputed 2 missing value(s) in 'ME4_groups' with median 4.0.
-[2026-11-11 16:26:19] [INFO] [JSSAA.data_loader]: Imputed 1 missing value(s) in 'RD1_distinguish' with median 3.0.
-[2026-11-11 16:26:19] [INFO] [JSSAA.data_loader]: Imputed 1 missing value(s) in 'RD3_fake_media' with median 3.0.
-[2026-11-11 16:26:19] [INFO] [JSSAA.data_loader]: Imputed 1 missing value(s) in 'RD4_crowd_belief' with median 3.0.
-[2026-11-11 16:26:19] [INFO] [JSSAA.data_loader]: Imputed 1 missing value(s) in 'RD5_difficulty' with median 3.0.
-[2026-11-11 16:26:19] [INFO] [JSSAA.data_loader]: Imputed 1 missing value(s) in 'DT1_phishing' with median 3.0.
-[2026-11-11 16:26:19] [INFO] [JSSAA.data_loader]: Imputed 1 missing value(s) in 'VB1_cross_check' with median 3.0.
-[2026-11-11 16:26:19] [INFO] [JSSAA.data_loader]: Imputed 1 missing value(s) in 'VB2_factcheck_sites' with median 3.0.
-[2026-11-11 16:26:19] [INFO] [JSSAA.data_loader]: Imputed 1 missing value(s) in 'VB3_hold_share' with median 3.0.
-[2026-11-11 16:26:19] [INFO] [JSSAA.data_loader]: Imputed 1 missing value(s) in 'VB4_correct_others' with median 3.0.
-[2026-11-11 16:26:19] [INFO] [JSSAA.data_loader]: Imputed 2 missing value(s) in 'VB5_impulsive_share' with median 3.0.
-[2026-11-11 16:26:19] [INFO] [JSSAA.data_loader]: Data ingestion complete. Final valid sample size: n = 239
-[2026-11-11 16:26:19] [INFO] [JSSAA.preprocessing]: Preprocessing complete. Mean Overall Awareness: 3.31 (SD = 0.62)
-[2026-11-11 16:26:19] [INFO] [JSSAA]: Calculating comprehensive item and dimension descriptive statistics...
-[2026-11-11 16:26:19] [INFO] [JSSAA]: Evaluating scale and dimensional reliability coefficients...
-[2026-11-11 16:26:19] [INFO] [JSSAA]: Computing Spearman and Pearson correlation matrices...
-[2026-11-11 16:26:19] [INFO] [JSSAA]: Running inferential hypothesis tests across demographic cohorts...
-[2026-11-11 16:26:19] [INFO] [JSSAA]: Performing Principal Component Analysis (PCA)...
-[2026-11-11 16:26:19] [INFO] [JSSAA]: Auditing data quality anomalies and response patterns...
-[2026-11-11 16:26:19] [INFO] [JSSAA.outliers]: Quality Audit complete. Identified 15 suspicious respondents (6.3% of sample).
-[2026-11-11 16:26:19] [INFO] [JSSAA]: Running sensitivity analysis without suspicious respondents...
-[2026-11-11 16:26:19] [INFO] [JSSAA]: Synthesizing strategic findings and authoring executive decision report...
-[2026-11-11 16:26:19] [INFO] [JSSAA]: Generating publication-grade charts and multi-panel dashboard...
-[2026-11-11 16:26:21] [INFO] [JSSAA.visualization]: Saved 2x2 awareness dashboard at: outputs\jordan_awareness_dashboard.png
-[2026-11-11 16:26:22] [INFO] [JSSAA.visualization]: Saved radar chart at: outputs\dimension_radar_chart.png
-[2026-11-11 16:26:22] [INFO] [JSSAA.visualization]: Saved demographic boxplots at: outputs\demographic_boxplots.png
-[2026-11-11 16:26:23] [INFO] [JSSAA.visualization]: Saved perceived-vs-actual scatter at: outputs\perceived_vs_actual_scatter.png
-[2026-11-11 16:26:23] [INFO] [JSSAA.visualization]: Saved PCA scree plot at: outputs\pca_scree_plot.png
-[2026-11-11 16:26:23] [INFO] [JSSAA]: Exporting multi-tab Excel workbook and written decision reports...
-[2026-11-11 16:26:23] [INFO] [JSSAA.reporting]: Writing multi-tab analytical results to Excel at: outputs\JSSAA_results.xlsx
-[2026-11-11 16:26:24] [INFO] [JSSAA.reporting]: Excel workbook successfully created at: outputs\JSSAA_results.xlsx
-[2026-11-11 16:26:24] [INFO] [JSSAA.reporting]: Saved text report: outputs\executive_report.txt
-[2026-11-11 16:26:24] [INFO] [JSSAA.reporting]: Saved markdown report: outputs\executive_report.md
-[2026-11-11 16:26:24] [INFO] [JSSAA.reporting]: PDF Executive Report successfully built at: outputs\executive_report.pdf
+[2026-11-14 14:38:28] [INFO] [JSSAA]: ==================================================================
+[2026-11-14 14:38:28] [INFO] [JSSAA]: STARTING JSSAA PIPELINE: Jordan Social & Security Awareness Analysis
+[2026-11-14 14:38:28] [INFO] [JSSAA]: ==================================================================
+[2026-11-14 14:38:28] [INFO] [JSSAA.data_loader]: Loading survey response data from D:\Jordan Social & Security Awareness Analysis\data\sample_survey_responses.xlsx (format: .xlsx)
+[2026-11-14 14:38:30] [INFO] [JSSAA.data_loader]: Raw response records loaded: 245
+[2026-11-14 14:38:30] [INFO] [JSSAA.data_loader]: Removed 5 exact duplicate respondent rows.
+[2026-11-14 14:38:30] [WARNING] [JSSAA.data_loader]: Item 'ME1_news_freq' contained 1 out-of-range value(s); coerced to NaN.
+[2026-11-14 14:38:30] [WARNING] [JSSAA.data_loader]: Item 'RD1_distinguish' contained 1 out-of-range value(s); coerced to NaN.
+[2026-11-14 14:38:30] [WARNING] [JSSAA.data_loader]: Item 'RD5_difficulty' contained 1 out-of-range value(s); coerced to NaN.
+[2026-11-14 14:38:30] [WARNING] [JSSAA.data_loader]: Dropping 1 respondent(s) exceeding missingness threshold (> 20% missing).
+[2026-11-14 14:38:30] [INFO] [JSSAA.data_loader]: Imputed 1 missing value(s) in 'ME1_news_freq' with median 4.0.
+[2026-11-14 14:38:30] [INFO] [JSSAA.data_loader]: Imputed 1 missing value(s) in 'ME3_time_spent' with median 4.0.
+[2026-11-14 14:38:30] [INFO] [JSSAA.data_loader]: Imputed 2 missing value(s) in 'ME4_groups' with median 4.0.
+[2026-11-14 14:38:30] [INFO] [JSSAA.data_loader]: Imputed 1 missing value(s) in 'RD1_distinguish' with median 3.0.
+[2026-11-14 14:38:30] [INFO] [JSSAA.data_loader]: Imputed 1 missing value(s) in 'RD3_fake_media' with median 3.0.
+[2026-11-14 14:38:30] [INFO] [JSSAA.data_loader]: Imputed 1 missing value(s) in 'RD4_crowd_belief' with median 3.0.
+[2026-11-14 14:38:30] [INFO] [JSSAA.data_loader]: Imputed 1 missing value(s) in 'RD5_difficulty' with median 3.0.
+[2026-11-14 14:38:30] [INFO] [JSSAA.data_loader]: Imputed 1 missing value(s) in 'DT1_phishing' with median 3.0.
+[2026-11-14 14:38:30] [INFO] [JSSAA.data_loader]: Imputed 1 missing value(s) in 'VB1_cross_check' with median 3.0.
+[2026-11-14 14:38:30] [INFO] [JSSAA.data_loader]: Imputed 1 missing value(s) in 'VB2_factcheck_sites' with median 3.0.
+[2026-11-14 14:38:30] [INFO] [JSSAA.data_loader]: Imputed 1 missing value(s) in 'VB3_hold_share' with median 3.0.
+[2026-11-14 14:38:30] [INFO] [JSSAA.data_loader]: Imputed 1 missing value(s) in 'VB4_correct_others' with median 3.0.
+[2026-11-14 14:38:30] [INFO] [JSSAA.data_loader]: Imputed 2 missing value(s) in 'VB5_impulsive_share' with median 3.0.
+[2026-11-14 14:38:30] [INFO] [JSSAA.data_loader]: Data ingestion complete. Final valid sample size: n = 239
+[2026-11-14 14:38:31] [INFO] [JSSAA.preprocessing]: Preprocessing complete. Mean Overall Awareness: 3.31 (SD = 0.62)
+[2026-11-14 14:38:31] [INFO] [JSSAA]: Calculating comprehensive item and dimension descriptive statistics...
+[2026-11-14 14:38:31] [INFO] [JSSAA]: Evaluating scale and dimensional reliability coefficients...
+[2026-11-14 14:38:31] [INFO] [JSSAA]: Computing Spearman and Pearson correlation matrices...
+[2026-11-14 14:38:31] [INFO] [JSSAA]: Running inferential hypothesis tests across demographic cohorts...
+[2026-11-14 14:38:32] [INFO] [JSSAA]: Performing Principal Component Analysis (PCA)...
+[2026-11-14 14:38:32] [INFO] [JSSAA]: Auditing data quality anomalies and response patterns...
+[2026-11-14 14:38:32] [INFO] [JSSAA.outliers]: Quality Audit complete. Identified 15 suspicious respondents (6.3% of sample).
+[2026-11-14 14:38:32] [INFO] [JSSAA]: Running sensitivity analysis without suspicious respondents...
+[2026-11-14 14:38:32] [INFO] [JSSAA]: Synthesizing strategic findings and authoring executive decision report...
+[2026-11-14 14:38:32] [INFO] [JSSAA]: Generating publication-grade charts and multi-panel dashboard...
+[2026-11-14 14:38:39] [INFO] [JSSAA.visualization]: Saved 2x2 awareness dashboard at: D:\Jordan Social & Security Awareness Analysis\outputs\jordan_awareness_dashboard.png
+[2026-11-14 14:38:39] [INFO] [JSSAA.visualization]: Saved radar chart at: D:\Jordan Social & Security Awareness Analysis\outputs\dimension_radar_chart.png
+[2026-11-14 14:38:40] [INFO] [JSSAA.visualization]: Saved demographic boxplots at: D:\Jordan Social & Security Awareness Analysis\outputs\demographic_boxplots.png
+[2026-11-14 14:38:41] [INFO] [JSSAA.visualization]: Saved perceived-vs-actual scatter at: D:\Jordan Social & Security Awareness Analysis\outputs\perceived_vs_actual_scatter.png
+[2026-11-14 14:38:42] [INFO] [JSSAA.visualization]: Saved PCA scree plot at: D:\Jordan Social & Security Awareness Analysis\outputs\pca_scree_plot.png
+[2026-11-14 14:38:42] [INFO] [JSSAA]: Exporting multi-tab Excel workbook and written decision reports...
+[2026-11-14 14:38:42] [INFO] [JSSAA.reporting]: Writing multi-tab analytical results to Excel at: D:\Jordan Social & Security Awareness Analysis\outputs\JSSAA_results.xlsx
+[2026-11-14 14:38:42] [INFO] [JSSAA.reporting]: Excel workbook successfully created at: D:\Jordan Social & Security Awareness Analysis\outputs\JSSAA_results.xlsx
+[2026-11-14 14:38:42] [INFO] [JSSAA.reporting]: Saved text report: D:\Jordan Social & Security Awareness Analysis\outputs\executive_report.txt
+[2026-11-14 14:38:42] [INFO] [JSSAA.reporting]: Saved markdown report: D:\Jordan Social & Security Awareness Analysis\outputs\executive_report.md
+[2026-11-14 14:38:43] [INFO] [JSSAA.reporting]: PDF Executive Report successfully built at: D:\Jordan Social & Security Awareness Analysis\outputs\executive_report.pdf

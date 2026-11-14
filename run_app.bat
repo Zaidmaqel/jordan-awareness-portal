@@ -42,3 +42,4 @@ echo [INFO] Launching Streamlit web interface...
 python -m streamlit run app.py
 
 pause
+

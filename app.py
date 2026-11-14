@@ -1,747 +1,747 @@
 """
-JSSAA (Jordan Social & Security Awareness Analysis)
-Streamlit Graphical User Interface.
-
-Provides an interactive, bilingual (Arabic / English) analytics dashboard for
-community awareness, misinformation resilience, and digital threat hygiene.
+YOUTH AWARENESS & EXTREMISM RISK ASSESSMENT PORTAL
+البوابة الإحصائية لدراسة وعي الشباب حول مخاطر التطرف والإرهاب
+Applied Statistics & Probability for Engineers | مساق الإحصاء والاحتمالات للمهندسين
 """
 
-import os
-import sys
-import io
-import tempfile
-import pandas as pd
-import numpy as np
 import streamlit as st
-import plotly.express as px
-import plotly.graph_objects as go
+import numpy as np
+import scipy.stats as stats
+import matplotlib.pyplot as plt
 
-# Add parent directory to path
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
-
-import config
-from main import run_pipeline
-from src.visualization import ar
-
-# ==========================================
-# Page Configuration
-# ==========================================
+# ==============================================================================
+# 1. PAGE CONFIGURATION & DARK-SLATE INSTITUTIONAL THEME
+# ==============================================================================
 st.set_page_config(
-    page_title="JSSAA - Jordan Social & Security Awareness Analysis",
-    page_icon="🛡️",
+    page_title="Youth Awareness & Extremism Risk Assessment Portal",
+    page_icon=None,
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# ==========================================
-# Localization Dictionary (Bilingual Support)
-# ==========================================
-STRINGS = {
-    "en": {
-        "title": "Jordan Social & Security Awareness Analysis (JSSAA)",
-        "subtitle": "Community Awareness & Digital Threat Hygiene Analytics Platform",
-        "lang_switch": "Language / اللغة",
-        "data_source": "Data Ingestion Source",
-        "upload_file": "Upload Survey Responses (.xlsx or .csv)",
-        "use_sample": "Use synthetic sample dataset (~245 records)",
-        "settings_header": "Analytical Parameters & Thresholds",
-        "z_thresh": "Item Outlier Z-Threshold",
-        "iqr_mult": "IQR Multiplier (Overall Outliers)",
-        "low_band": "Low Awareness Limit (Critical Threshold)",
-        "mod_band": "Moderate Awareness Limit",
-        "target_score": "National Target Score",
-        "include_exp": "Include Media Exposure in Awareness Score",
-        "run_sens": "Run Sensitivity Analysis (Audit Flagged Responses)",
-        "run_pca": "Compute Principal Component Analysis (PCA)",
-        "run_btn": "Run Analytics Pipeline",
-        "template_btn": "Download Google Forms Survey Template (Markdown)",
-        "welcome_title": "Welcome to the JSSAA Analytics Platform",
-        "welcome_desc": (
-            "This national intelligence platform evaluates community resilience against online rumors, "
-            "misinformation, phishing, banking fraud (CliQ/OTP), and digital hazards across Jordan."
-        ),
-        "step1": "1. Upload Google Forms Responses",
-        "step1_desc": "Export your survey responses from Google Sheets to Excel (.xlsx) and upload in the sidebar.",
-        "step2": "2. Configure Diagnostic Thresholds",
-        "step2_desc": "Fine-tune psychometric Z-scores, risk boundaries, and dimensional settings.",
-        "step3": "3. Evaluate & Export Decisions",
-        "step3_desc": "Inspect interactive charts, psychometric reliability, prioritized actions, and multi-tab Excel/PDF reports.",
-        "kpi_sample": "Valid Sample Size (n)",
-        "kpi_mean": "Community Awareness Score",
-        "kpi_alpha": "Scale Reliability (Cronbach's α)",
-        "kpi_low": "Population in Low-Risk Band",
-        "tab_overview": "Overview & Radar",
-        "tab_quality": "Data Quality Audit",
-        "tab_stats": "Descriptive & Psychometrics",
-        "tab_corr": "Correlations & Media",
-        "tab_groups": "Demographic Disparities",
-        "tab_anomalies": "Anomaly & Sensitivity",
-        "tab_recs": "Strategic Recommendations",
-        "tab_report": "Executive Report",
-        "tab_downloads": "Export Center",
-        "footer_ethics": "JSSAA Framework: Strictly anonymous data collection, voluntary participation, and aggregate policy reporting only.",
+# Targeted CSS rules strictly avoiding global body direction:rtl or universal '*' font selector
+st.markdown("""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cairo:wght@400;600;700;800&display=swap');
+
+    /* Global Dark Slate Canvas */
+    .stApp {
+        background-color: #0b1120;
+        color: #f8fafc;
+    }
+
+    h1, h2, h3, h4, p, label, .portal-header, .q-card, .kpi-card, .rec-card {
+        font-family: 'Inter', 'Cairo', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    /* Portal Banner */
+    .portal-header {
+        background: linear-gradient(135deg, #111a2e 0%, #162032 100%);
+        border: 1px solid #283548;
+        border-top: 4px solid #3b82f6;
+        padding: 24px 30px;
+        border-radius: 8px;
+        margin-bottom: 24px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+    .portal-title-en {
+        color: #f8fafc;
+        font-size: 21px;
+        font-weight: 800;
+        letter-spacing: 0.03em;
+        margin: 0 0 4px 0;
+        text-transform: uppercase;
+    }
+    .portal-title-ar {
+        color: #38bdf8;
+        font-size: 20px;
+        font-weight: 700;
+        margin: 0 0 6px 0;
+        direction: rtl;
+        text-align: right;
+    }
+    .portal-subtitle {
+        color: #94a3b8;
+        font-size: 13px;
+        font-weight: 500;
+        margin: 0;
+    }
+
+    /* Unified Dark Question Card */
+    .q-card {
+        background-color: #162032;
+        border: 1px solid #283548;
+        border-radius: 8px;
+        padding: 16px 20px 12px 20px;
+        margin-bottom: 16px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+    .q-badge {
+        display: inline-block;
+        color: #38bdf8;
+        font-size: 16px;
+        font-weight: 800;
+        margin-bottom: 6px;
+        letter-spacing: 0.05em;
+    }
+    .q-text-en {
+        color: #f8fafc;
+        font-size: 15px;
+        font-weight: 600;
+        line-height: 1.5;
+        margin-bottom: 4px;
+    }
+    .q-text-ar {
+        color: #cbd5e1;
+        font-size: 15px;
+        font-weight: 600;
+        line-height: 1.6;
+        direction: rtl;
+        text-align: right;
+        margin-bottom: 10px;
+    }
+
+    /* Unified KPI Card */
+    .kpi-card {
+        background-color: #162032;
+        border: 1px solid #334155;
+        border-top: 3px solid #3b82f6;
+        border-radius: 8px;
+        padding: 16px 12px;
+        text-align: center;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+    }
+    .kpi-title {
+        color: #94a3b8;
+        font-size: 11.5px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        margin-bottom: 6px;
+    }
+    .kpi-value {
+        color: #f8fafc;
+        font-size: 28px;
+        font-weight: 800;
+        line-height: 1.1;
+    }
+    .kpi-sub {
+        color: #64748b;
+        font-size: 11px;
+        margin-top: 6px;
+    }
+
+    /* Structured Recommendation Panel */
+    .rec-card {
+        background-color: #162032;
+        border-radius: 8px;
+        padding: 22px 26px;
+        margin: 20px 0;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    }
+    .rec-card-low {
+        border: 1px solid #10b981;
+        border-top: 4px solid #10b981;
+    }
+    .rec-card-mod {
+        border: 1px solid #f59e0b;
+        border-top: 4px solid #f59e0b;
+    }
+    .rec-card-high {
+        border: 1px solid #ef4444;
+        border-top: 4px solid #ef4444;
+    }
+
+    .rec-header {
+        font-size: 17px;
+        font-weight: 800;
+        margin-bottom: 16px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #283548;
+    }
+    .rec-col-en {
+        color: #e2e8f0;
+        font-size: 13.5px;
+        line-height: 1.8;
+    }
+    .rec-col-ar {
+        color: #e2e8f0;
+        font-size: 14px;
+        line-height: 1.9;
+        direction: rtl;
+        text-align: right;
+    }
+
+    /* High contrast primary submit button */
+    div.stButton > button:first-child {
+        background-color: #2563eb !important;
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        font-size: 15px !important;
+        border: none !important;
+        border-radius: 6px !important;
+        padding: 12px 24px !important;
+        box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4) !important;
+        transition: background-color 0.2s ease, transform 0.1s ease !important;
+    }
+    div.stButton > button:first-child:hover {
+        background-color: #1d4ed8 !important;
+        transform: translateY(-1px) !important;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# ==============================================================================
+# 2. SURVEY ITEMS REPOSITORY (10 QUANTITATIVE DIMENSIONS)
+# ==============================================================================
+QUESTIONS = [
+    {
+        "id": "Q1",
+        "en": "Exposure to extremist or radical recruitment discourse online",
+        "ar": "التعرض لخطابات التطرف أو التحريض الفكري عبر المنصات الرقمية"
     },
-    "ar": {
-        "title": "نظام تحليل الوعي الأمني والمجتمعي في الأردن (JSSAA)",
-        "subtitle": "منصة قياس الوعي المجتمعي حيال الشائعات والتهديدات الرقمية والأمان السيبراني",
-        "lang_switch": "اللغة / Language",
-        "data_source": "مصدر البيانات",
-        "upload_file": "رفع ملف الاستبانة (.xlsx أو .csv)",
-        "use_sample": "استخدام العينة التجريبية النموذجية (~245 مستجيب)",
-        "settings_header": "المعايير الإحصائية والعتبات",
-        "z_thresh": "عتبة الدرجة المعيارية (Z-Score)",
-        "iqr_mult": "معامل المدى الربيعي (IQR)",
-        "low_band": "حد الوعي المنخفض (العتبة الحرجة)",
-        "mod_band": "حد الوعي المتوسط",
-        "target_score": "الهدف الوطني المستهدف",
-        "include_exp": "تضمين التعرض الإعلامي في درجة الوعي الكلي",
-        "run_sens": "إجراء تحليل الحساسية واستبعاد الاستجابات المريبة",
-        "run_pca": "إجراء تحليل المركبات الرئيسية (PCA)",
-        "run_btn": "تشغيل التحليل الإحصائي",
-        "template_btn": "تحميل نموذج استبانة Google Forms (ملف Markdown)",
-        "welcome_title": "مرحباً بكم في منصة JSSAA الوطنية للتحليل السيكومتري والأمني",
-        "welcome_desc": (
-            "منصة وطنية متقدمة لقياس وتحليل مستوى الوعي المجتمعي الأردني بالتعامل مع الشائعات، "
-            "والأخبار المضللة، وعمليات الاحتيال الإلكتروني ونظام كليك (CliQ)، وسلوك التحقق والوقاية الرقمية."
-        ),
-        "step1": "1. رفع ردود استبانة Google Forms",
-        "step1_desc": "قم بتصدير الردود من Google Sheets إلى ملف Excel (.xlsx) وارفعه عبر القائمة الجانبية.",
-        "step2": "2. ضبط معايير القياس والتصنيف",
-        "step2_desc": "تعديل عتبات الشذوذ الإحصائي، وحدود تصنيف نطاقات الوعي، وأوزان الأبعاد.",
-        "step3": "3. مراجعة المؤشرات وتصدير القرارات",
-        "step3_desc": "استعراض لوحات المؤشرات التفاعلية، ومعاملات الثبات، وخارطة الطريق التنفيذية وتنزيل التقارير المعتمدة.",
-        "kpi_sample": "حجم العينة المعتمدة (n)",
-        "kpi_mean": "متوسط درجة الوعي المجتمعي",
-        "kpi_alpha": "معامل ثبات المقياس (ألفا)",
-        "kpi_low": "نسبة فئة الوعي المنخفض (حرج)",
-        "tab_overview": "لوحة المؤشرات العامة",
-        "tab_quality": "تدقيق جودة البيانات",
-        "tab_stats": "الإحصاء والقياس السيكومتري",
-        "tab_corr": "الارتباطات والتعرض الإعلامي",
-        "tab_groups": "الفروق الديموغرافية",
-        "tab_anomalies": "كشف الشذوذ والحساسية",
-        "tab_recs": "التوصيات وخطة العمل",
-        "tab_report": "التقرير التنفيذي",
-        "tab_downloads": "مركز التحميل والتصدير",
-        "footer_ethics": "إطار عمل JSSAA: جمع بيانات مجهول الهوية بالكامل، مشاركة طوعية، وتقارير سياسات تجميعية فقط.",
+    {
+        "id": "Q2",
+        "en": "Tendency toward intellectual isolation or closed radical groups",
+        "ar": "القابلية للانعزال الفكري أو الانضمام لمجموعات مغلقة متشددة"
     },
+    {
+        "id": "Q3",
+        "en": "Accepting unverified rumors that incite division and extremism",
+        "ar": "التسرع في تصديق الشائعات المضللة التي تثير الفتنة والتطرف"
+    },
+    {
+        "id": "Q4",
+        "en": "Influence of emotional propaganda justifying violence or terrorism",
+        "ar": "التأثر بالخطابات العاطفية التي تستغل الأزمات لتبرير العنف أو الإرهاب"
+    },
+    {
+        "id": "Q5",
+        "en": "Absence of family and community dialogue on extremism risks",
+        "ar": "غياب الحوار الأسري والمجتمعي حول مخاطر الفكر المتطرف"
+    },
+    {
+        "id": "Q6",
+        "en": "Low participation in university seminars promoting moderation",
+        "ar": "قلة المشاركة في الندوات التوعوية والجامعية التي تعزز الوسطية"
+    },
+    {
+        "id": "Q7",
+        "en": "Tolerance of hate speech or ideological exclusion in public discussions",
+        "ar": "التسامح مع عبارات الكراهية أو الإقصاء الفكري في النقاشات العامة"
+    },
+    {
+        "id": "Q8",
+        "en": "Reliance on anonymous unverified sources for ideological topics",
+        "ar": "الاعتماد على مصادر مجهولة وغير موثوقة في فهم القضايا الفكرية"
+    },
+    {
+        "id": "Q9",
+        "en": "Belief that social or economic grievances justify radicalization",
+        "ar": "الاعتقاد بأن التهميش أو الأزمات يبرران الانجرار وراء التطرف"
+    },
+    {
+        "id": "Q10",
+        "en": "Low awareness of psychological recruitment methods used by extremists",
+        "ar": "ضعف الوعي بأساليب الاستقطاب الفكري التي تستخدمها التنظيمات المتطرفة"
+    }
+]
+
+QUESTION_KEYS = [q["id"] for q in QUESTIONS]
+
+SCALE_LABELS = {
+    1: {"en": "1 - Low Risk / Strong Awareness", "ar": "1 - وعي مرتفع / مخاطر منخفضة"},
+    2: {"en": "2 - Good Awareness", "ar": "2 - وعي جيد"},
+    3: {"en": "3 - Moderate / Neutral", "ar": "3 - مستوى متوسط / محايد"},
+    4: {"en": "4 - Noticeable Vulnerability", "ar": "4 - مؤشر قابلية ملحوظ"},
+    5: {"en": "5 - High Vulnerability / Risk", "ar": "5 - مؤشر خطورة مرتفع"}
 }
 
-# ==========================================
-# Sidebar Controls & Settings
-# ==========================================
-with st.sidebar:
-    st.markdown("## 🛡️ JSSAA Platform")
-    lang_choice = st.radio(
-        "Language / اللغة",
-        options=["English", "العربية"],
-        index=0,
-        horizontal=True,
-    )
-    lang = "ar" if lang_choice == "العربية" else "en"
-    L = STRINGS[lang]
+# Reference baseline parameters
+INITIAL_BASELINE = [2.1, 2.4, 2.0, 3.6, 2.3, 3.2, 1.9, 3.8, 2.6, 2.2, 3.1, 1.7, 3.7, 2.5, 2.8]
 
-    # Inject RTL CSS if Arabic selected
-    if lang == "ar":
-        st.markdown(
-            """
-            <style>
-            @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
-            html, body, [class*="css"], .stMarkdown, .stText, h1, h2, h3, h4, p {
-                font-family: 'Cairo', sans-serif !important;
-                direction: rtl;
-                text-align: right;
-            }
-            .stMetric {
-                direction: rtl;
-                text-align: right;
-            }
-            </style>
-            """,
-            unsafe_allow_html=True,
-        )
+if "baseline_pool" not in st.session_state:
+    st.session_state.baseline_pool = list(INITIAL_BASELINE)
+
+if "latest_scores" not in st.session_state:
+    st.session_state.latest_scores = [3] * 10
+
+# ==============================================================================
+# 3. SIDEBAR CONFIGURATION
+# ==============================================================================
+with st.sidebar:
+    st.markdown("### Interface Configuration")
+    lang_mode = st.radio(
+        "Interface Language / لغة الواجهة",
+        ["Bilingual (English & العربية)", "English Only", "العربية فقط"],
+        index=0
+    )
+
+    show_en = lang_mode in ["Bilingual (English & العربية)", "English Only"]
+    show_ar = lang_mode in ["Bilingual (English & العربية)", "العربية فقط"]
 
     st.markdown("---")
-    st.subheader(L["data_source"])
+    st.markdown("### Model Specifications")
+    st.markdown(r"""
+    - **Inference Standard:** Continuous Gaussian ($Z$-Score)
+    - **Scale Range:** 1.00 to 5.00
+    - **Classification Tiers:**
+      - Low Risk: $\bar{X} < 2.50$
+      - Moderate Risk: $2.50 \le \bar{X} \le 3.50$
+      - High Risk: $\bar{X} > 3.50$
+    """)
 
-    use_sample = st.checkbox(L["use_sample"], value=True)
-    uploaded_file = st.file_uploader(
-        L["upload_file"],
-        type=["xlsx", "xls", "csv"],
-        disabled=use_sample,
-    )
+    st.markdown("---")
+    if st.button("Reset Questionnaire Sliders", use_container_width=True):
+        for idx in range(1, 11):
+            st.session_state[f"slider_q{idx}"] = 3
+        st.session_state.latest_scores = [3] * 10
+        st.rerun()
 
-    with st.expander(f"⚙️ {L['settings_header']}", expanded=False):
-        z_threshold = st.slider(L["z_thresh"], min_value=1.5, max_value=3.5, value=2.5, step=0.1)
-        iqr_multiplier = st.slider(L["iqr_mult"], min_value=1.0, max_value=2.5, value=1.5, step=0.1)
-        low_max = st.slider(L["low_band"], min_value=1.5, max_value=2.8, value=2.33, step=0.01)
-        moderate_max = st.slider(L["mod_band"], min_value=2.9, max_value=4.2, value=3.66, step=0.01)
-        target_score = st.slider(L["target_score"], min_value=3.5, max_value=5.0, value=4.0, step=0.1)
-        include_exposure = st.checkbox(L["include_exp"], value=False)
-        run_sens = st.checkbox(L["run_sens"], value=True)
-        run_pca_flag = st.checkbox(L["run_pca"], value=True)
+# ==============================================================================
+# 4. PORTAL HEADER
+# ==============================================================================
+header_markup = '<div class="portal-header">'
+if show_en:
+    header_markup += '<div class="portal-title-en">Youth Awareness & Extremism Risk Assessment Portal</div>'
+if show_ar:
+    header_markup += '<div class="portal-title-ar">البوابة الإحصائية لدراسة وعي الشباب حول مخاطر التطرف والإرهاب</div>'
+header_markup += '<div class="portal-subtitle">Applied Statistics & Probability for Engineers | نظام التحليل الإحصائي والاحتمالي المباشر</div>'
+header_markup += '</div>'
+st.markdown(header_markup, unsafe_allow_html=True)
 
-    run_clicked = st.button(f"🚀 {L['run_btn']}", type="primary", use_container_width=True)
+# ==============================================================================
+# 5. SECTION 1: REDESIGNED SURVEY QUESTION CARDS
+# ==============================================================================
+if show_en and show_ar:
+    sec1_heading = "Section 1: Assessment Survey | أولاً: استبانة تقييم الوعي الفكري"
+    sec1_sub = "Evaluate the 10 dimensions below using the unified 1 to 5 sliders."
+elif show_ar:
+    sec1_heading = "أولاً: استبانة تقييم الوعي الفكري ومخاطر التطرف (10 محاور)"
+    sec1_sub = "حدد درجة التقييم لكل محور عبر المؤشر المنزلق (1 = وعي مرتفع / أمان، 5 = قابلية مرتفعة للتأثر)."
+else:
+    sec1_heading = "Section 1: Assessment Survey (10 Extremism Awareness Items)"
+    sec1_sub = "Evaluate the 10 dimensions below using the unified 1 to 5 sliders."
 
-    # Download Survey Template Button
-    template_path = os.path.join(os.path.dirname(__file__), "SURVEY_TEMPLATE.md")
-    if os.path.exists(template_path):
-        with open(template_path, "r", encoding="utf-8") as tf:
-            template_content = tf.read()
-        st.download_button(
-            label=f"📄 {L['template_btn']}",
-            data=template_content,
-            file_name="JSSAA_SURVEY_TEMPLATE.md",
-            mime="text/markdown",
-            use_container_width=True,
-        )
+st.subheader(sec1_heading)
+st.caption(sec1_sub)
 
+col_left, col_right = st.columns(2)
+form_inputs = []
 
-# ==========================================
-# Execution Engine (Session State Cached)
-# ==========================================
-@st.cache_data(show_spinner=False)
-def execute_pipeline_cached(
-    file_bytes: Optional[bytes],
-    filename: Optional[str],
-    is_sample: bool,
-    z_th: float,
-    iqr_m: float,
-    l_max: float,
-    m_max: float,
-    t_score: float,
-    inc_exp: bool,
-    r_sens: bool,
-    r_pca: bool,
-) -> Dict[str, Any]:
-    """Execute analysis pipeline with runtime settings."""
-    out_dir = os.path.join(os.path.dirname(__file__), "outputs")
-    os.makedirs(out_dir, exist_ok=True)
+with st.form("survey_form"):
+    for idx, q_item in enumerate(QUESTIONS):
+        target_col = col_left if (idx % 2 == 0) else col_right
+        with target_col:
+            # Clean dark container for each question
+            card_html = '<div class="q-card">'
+            card_html += f'<span class="q-badge">{q_item["id"]}</span>'
+            if show_en:
+                card_html += f'<div class="q-text-en">{q_item["en"]}</div>'
+            if show_ar:
+                card_html += f'<div class="q-text-ar">{q_item["ar"]}</div>'
+            card_html += '</div>'
+            st.markdown(card_html, unsafe_allow_html=True)
 
-    if is_sample or file_bytes is None:
-        target_input = os.path.join(os.path.dirname(__file__), "data", "sample_survey_responses.xlsx")
-        if not os.path.exists(target_input):
-            from data.sample_generator import generate_synthetic_data
-            generate_synthetic_data(output_path=target_input)
-    else:
-        # Save uploaded bytes to a temp file
-        ext = os.path.splitext(filename)[-1].lower() if filename else ".xlsx"
-        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=ext)
-        temp_file.write(file_bytes)
-        temp_file.close()
-        target_input = temp_file.name
-
-    return run_pipeline(
-        input_path=target_input,
-        output_dir=out_dir,
-        run_sensitivity=r_sens,
-        run_pca=r_pca,
-        make_pdf=True,
-        z_threshold=z_th,
-        iqr_multiplier=iqr_m,
-        low_max=l_max,
-        moderate_max=m_max,
-        target_score=t_score,
-        include_exposure_in_score=inc_exp,
-    )
-
-
-# Trigger execution if button pressed or if not already executed
-if run_clicked:
-    with st.spinner("Executing rigorous psychometric & inferential analytics pipeline..."):
-        progress_bar = st.progress(15)
-        f_bytes = uploaded_file.getvalue() if (uploaded_file and not use_sample) else None
-        f_name = uploaded_file.name if (uploaded_file and not use_sample) else None
-
-        try:
-            progress_bar.progress(40)
-            res = execute_pipeline_cached(
-                file_bytes=f_bytes,
-                filename=f_name,
-                is_sample=use_sample,
-                z_th=z_threshold,
-                iqr_m=iqr_multiplier,
-                l_max=low_max,
-                m_max=moderate_max,
-                t_score=target_score,
-                inc_exp=include_exposure,
-                r_sens=run_sens,
-                r_pca=run_pca_flag,
+            val = st.slider(
+                label=f"Slider for {q_item['id']}",
+                min_value=1,
+                max_value=5,
+                value=int(st.session_state.latest_scores[idx]),
+                step=1,
+                key=f"slider_q{idx+1}",
+                label_visibility="collapsed"
             )
-            progress_bar.progress(90)
-            st.session_state["pipeline_results"] = res
-            progress_bar.progress(100)
-            progress_bar.empty()
-            st.success("Analysis executed successfully!" if lang == "en" else "تم اكتمال التحليل بنجاح!")
-        except Exception as e:
-            st.error(f"Error during analysis: {e}")
-            logger_err = str(e)
-            if "required survey columns could not be mapped" in logger_err:
-                st.error("Missing headers detected in the uploaded spreadsheet. Please ensure questions match SURVEY_TEMPLATE.md.")
+            form_inputs.append(val)
 
+            # Live scale label
+            lbl_en = SCALE_LABELS[val]["en"]
+            lbl_ar = SCALE_LABELS[val]["ar"]
+            if show_en and show_ar:
+                st.caption(f"Active Selection: {lbl_en} | {lbl_ar}")
+            elif show_ar:
+                st.caption(f"الخيار النشط: {lbl_ar}")
+            else:
+                st.caption(f"Active Selection: {lbl_en}")
 
-# ==========================================
-# Main Interface Area
-# ==========================================
-st.markdown(f"# {L['title']}")
-st.markdown(f"*{L['subtitle']}*")
+            st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+
+    if show_en and show_ar:
+        btn_label = "Execute Statistical & Probabilistic Analysis | تنفيذ التحليل الإحصائي والاحتمالي"
+    elif show_ar:
+        btn_label = "تنفيذ التحليل الإحصائي والاحتمالي المباشر"
+    else:
+        btn_label = "Execute Statistical & Probabilistic Analysis"
+
+    submitted = st.form_submit_button(btn_label, use_container_width=True)
+
+if submitted:
+    st.session_state.latest_scores = form_inputs
+    new_mean = float(np.mean(form_inputs))
+    st.session_state.baseline_pool.append(new_mean)
+
+# ==============================================================================
+# 6. MATHEMATICAL ENGINE & MOMENTS
+# ==============================================================================
+scores = np.array(st.session_state.latest_scores, dtype=float)
+n_q = len(scores)
+
+# 1. Respondent Mean (X_bar)
+X_bar = float(np.mean(scores))
+
+# 2. Sample Variance (S^2) & Standard Deviation (S)
+S2 = float(np.var(scores, ddof=1)) if n_q > 1 else 0.0
+S = float(np.std(scores, ddof=1)) if n_q > 1 else 0.0
+
+# 3. Population Parameters (mu, sigma)
+base_arr = np.array(st.session_state.baseline_pool, dtype=float)
+mu = float(np.mean(base_arr))
+sigma = float(np.std(base_arr, ddof=1)) if len(base_arr) > 1 else 0.50
+if sigma <= 0.001:
+    sigma = 0.50
+
+# 4. Standardized Z-Score
+Z = float((X_bar - mu) / sigma)
+
+# 5. Normal Cumulative & Exceedance Probabilities
+prob_cdf = float(stats.norm.cdf(Z))
+prob_sf = float(stats.norm.sf(Z))
+
+# 6. Empirical Proportions
+k_high = int(np.sum(scores >= 4))
+p_empirical_high = float(k_high / n_q)
+
+count_low = int(np.sum(scores <= 2))
+count_mod = int(np.sum(scores == 3))
+count_high = int(np.sum(scores >= 4))
+
+p_low = float(count_low / n_q)
+p_mod = float(count_mod / n_q)
+p_high = float(count_high / n_q)
+
+# ==============================================================================
+# 7. SECTION 2: 5 UNIFIED KPI CARDS
+# ==============================================================================
 st.markdown("---")
+if show_en and show_ar:
+    sec2_title = "Section 2: Engineering Moments & Key Indicators | ثانياً: المؤشرات الإحصائية الرئيسية"
+elif show_ar:
+    sec2_title = "ثانياً: المؤشرات الإحصائية وعزوم المعاينة الرئيسية"
+else:
+    sec2_title = "Section 2: Quantitative Moments & Key Indicators"
 
-results = st.session_state.get("pipeline_results", None)
+st.subheader(sec2_title)
 
-if results is None:
-    # Friendly Welcome Screen
-    st.info(f"### ℹ️ {L['welcome_title']}\n{L['welcome_desc']}")
-    c1, c2, c3 = st.columns(3)
-    with c1:
-        st.markdown(f"#### 📂 {L['step1']}")
-        st.write(L["step1_desc"])
-    with c2:
-        st.markdown(f"#### ⚙️ {L['step2']}")
-        st.write(L["step2_desc"])
-    with c3:
-        st.markdown(f"#### 📊 {L['step3']}")
-        st.write(L["step3_desc"])
+c1, c2, c3, c4, c5 = st.columns(5)
 
-    st.markdown(
-        """
-        > **Quick Start:** Keep *"Use synthetic sample data"* checked in the sidebar and click **"Run Analytics Pipeline"** to evaluate the complete demonstration dataset.
-        """
-    )
+with c1:
+    t_en = "Respondent Mean" if show_en else ""
+    t_ar = "المتوسط الحسابي" if show_ar else ""
+    t_both = f"{t_en}<br>{t_ar}" if (show_en and show_ar) else (t_ar if show_ar else t_en)
+    st.markdown(f"""
+    <div class="kpi-card">
+        <div class="kpi-title">{t_both}</div>
+        <div class="kpi-value">{X_bar:.2f}</div>
+        <div class="kpi-sub">Scale: [1.00, 5.00]</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with c2:
+    t_en = "Std Deviation (S)" if show_en else ""
+    t_ar = "الانحراف المعياري" if show_ar else ""
+    t_both = f"{t_en}<br>{t_ar}" if (show_en and show_ar) else (t_ar if show_ar else t_en)
+    st.markdown(f"""
+    <div class="kpi-card">
+        <div class="kpi-title">{t_both}</div>
+        <div class="kpi-value">{S:.2f}</div>
+        <div class="kpi-sub">Variance S² = {S2:.2f}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with c3:
+    t_en = "Reference Mean (μ)" if show_en else ""
+    t_ar = "متوسط العينة المرجعية" if show_ar else ""
+    t_both = f"{t_en}<br>{t_ar}" if (show_en and show_ar) else (t_ar if show_ar else t_en)
+    st.markdown(f"""
+    <div class="kpi-card">
+        <div class="kpi-title">{t_both}</div>
+        <div class="kpi-value">{mu:.2f}</div>
+        <div class="kpi-sub">σ = {sigma:.2f} (N={len(base_arr)})</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with c4:
+    z_col = "#ef4444" if Z > 1.0 else ("#f59e0b" if Z > 0 else "#10b981")
+    t_en = "Standard Z-Score" if show_en else ""
+    t_ar = "الدرجة المعيارية" if show_ar else ""
+    t_both = f"{t_en}<br>{t_ar}" if (show_en and show_ar) else (t_ar if show_ar else t_en)
+    st.markdown(f"""
+    <div class="kpi-card">
+        <div class="kpi-title">{t_both}</div>
+        <div class="kpi-value" style="color: {z_col};">{Z:+.2f}</div>
+        <div class="kpi-sub">Z = (X̄ - μ) / σ</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+with c5:
+    t_en = "Exceedance P(Z > z)" if show_en else ""
+    t_ar = "احتمالية تجاوز المعدل" if show_ar else ""
+    t_both = f"{t_en}<br>{t_ar}" if (show_en and show_ar) else (t_ar if show_ar else t_en)
+    st.markdown(f"""
+    <div class="kpi-card">
+        <div class="kpi-title">{t_both}</div>
+        <div class="kpi-value">{prob_sf * 100:.1f}%</div>
+        <div class="kpi-sub">Percentile: {prob_cdf * 100:.1f}%</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+
+# Mathematical formulations
+exp_title = (
+    "Mathematical Derivations & Calculations | تفكيك العمليات الحسابية والمعادلات"
+    if show_en and show_ar else
+    ("تفكيك المعادلات الإحصائية والاحتمالية" if show_ar else "Mathematical Derivations & Calculations")
+)
+with st.expander(exp_title):
+    st.latex(r"\bar{X} = \frac{1}{10}\sum_{i=1}^{10} X_i = \frac{" + f"{np.sum(scores):.0f}" + r"}{10} = " + f"{X_bar:.3f}")
+    st.latex(r"S^2 = \frac{\sum_{i=1}^{10} (X_i - \bar{X})^2}{10 - 1} = " + f"{S2:.4f}" + r" \implies S = \sqrt{S^2} = " + f"{S:.4f}")
+    st.latex(r"Z = \frac{\bar{X} - \mu}{\sigma} = \frac{" + f"{X_bar:.2f} - {mu:.2f}" + r"}{" + f"{sigma:.3f}" + r"} = " + f"{Z:+.4f}")
+    st.latex(r"P(Z \le " + f"{Z:.2f}" + r") = \Phi(" + f"{Z:.2f}" + r") = " + f"{prob_cdf:.4f}" + r" \implies P(Z > " + f"{Z:.2f}" + r") = 1 - \Phi(" + f"{Z:.2f}" + r") = " + f"{prob_sf:.4f}")
+    st.latex(r"P(X \ge 4) = \frac{k}{10} = \frac{" + f"{k_high}" + r"}{10} = " + f"{p_empirical_high:.2f}" + r" \quad (" + f"{p_empirical_high * 100:.1f}" + r"\%)")
+
+# ==============================================================================
+# 8. SECTION 3: 3 PERFECTLY ALIGNED, EQUAL-SIZE STATISTICAL CHARTS
+# ==============================================================================
+st.markdown("---")
+if show_en and show_ar:
+    sec3_title = "Section 3: Statistical Visualizations (Live Synchronization) | ثالثاً: الرسوم البيانية الإحصائية"
+elif show_ar:
+    sec3_title = "ثالثاً: الرسوم البيانية الإحصائية التفاعلية (تحديث مباشر مع كل استجابة)"
+else:
+    sec3_title = "Section 3: Symmetrical Statistical Visualizations"
+
+st.subheader(sec3_title)
+
+# Common Matplotlib styling parameters for dark-slate background
+plt.style.use("dark_background")
+plt.rcParams.update({
+    "font.family": "sans-serif",
+    "font.sans-serif": ["DejaVu Sans", "Arial"],
+    "axes.edgecolor": "#283548",
+    "axes.linewidth": 1.0,
+    "grid.color": "#222f44",
+    "grid.linestyle": "--",
+    "grid.alpha": 0.6,
+})
+
+chart_col1, chart_col2, chart_col3 = st.columns(3)
+
+# ------------------------------------------------------------------------------
+# Chart 1: Mean & Standard Deviation Profile (Bar Chart + SD Band)
+# ------------------------------------------------------------------------------
+with chart_col1:
+    fig1, ax1 = plt.subplots(figsize=(5.5, 4.2), dpi=150)
+    fig1.patch.set_facecolor("#162032")
+    ax1.set_facecolor("#162032")
+
+    colors_list = ["#10b981" if v <= 2 else ("#f59e0b" if v == 3 else "#ef4444") for v in scores]
+    bar_plots = ax1.bar(QUESTION_KEYS, scores, color=colors_list, edgecolor="#0b1120", linewidth=0.8, width=0.62)
+
+    # Standard Deviation Band around Mean
+    sd_lower = max(1.0, X_bar - S)
+    sd_upper = min(5.0, X_bar + S)
+    ax1.axhspan(sd_lower, sd_upper, color="#38bdf8", alpha=0.16, label=f"SD Band (X̄ ± S: [{sd_lower:.2f}, {sd_upper:.2f}])")
+
+    # Mean line
+    ax1.axhline(X_bar, color="#38bdf8", linestyle="-", linewidth=2.0, label=f"Mean (X̄ = {X_bar:.2f})")
+    ax1.axhline(mu, color="#94a3b8", linestyle=":", linewidth=1.2, label=f"Baseline (μ = {mu:.2f})")
+
+    ax1.set_ylim(0, 5.8)
+    ax1.set_ylabel("Likert Score (1.0 to 5.0)", fontsize=9, color="#f8fafc", fontweight="bold")
+    ax1.set_title("Question Scores & SD Band", fontsize=10.5, fontweight="bold", color="#f8fafc", pad=12)
+    ax1.tick_params(colors="#cbd5e1", labelsize=8)
+    ax1.grid(axis="y")
+    ax1.legend(loc="upper right", fontsize=7.2, facecolor="#111a2e", edgecolor="#283548", framealpha=0.95)
+
+    for b in bar_plots:
+        height = b.get_height()
+        ax1.text(b.get_x() + b.get_width() / 2.0, height + 0.12, f"{int(height)}", ha="center", va="bottom", fontsize=8, color="#f8fafc", fontweight="bold")
+
+    plt.tight_layout()
+    st.pyplot(fig1)
+    plt.close(fig1)
+
+# ------------------------------------------------------------------------------
+# Chart 2: Z-Score & Standard Normal Distribution Curve N(0,1)
+# ------------------------------------------------------------------------------
+with chart_col2:
+    fig2, ax2 = plt.subplots(figsize=(5.5, 4.2), dpi=150)
+    fig2.patch.set_facecolor("#162032")
+    ax2.set_facecolor("#162032")
+
+    z_vals = np.linspace(-3.5, 3.5, 300)
+    pdf_vals = stats.norm.pdf(z_vals)
+
+    ax2.plot(z_vals, pdf_vals, color="#38bdf8", linewidth=2.2, label="Gaussian N(0, 1)")
+
+    # Exceedance tail shading
+    z_limit = max(-3.5, min(3.5, Z))
+    shade_z = np.linspace(z_limit, 3.5, 150)
+    ax2.fill_between(shade_z, stats.norm.pdf(shade_z), color="#ef4444", alpha=0.35, label=f"P(Z > {Z:.2f}) = {prob_sf*100:.1f}%")
+
+    # Live Z line
+    ax2.axvline(Z, color="#ef4444", linestyle="--", linewidth=2.0, label=f"Live Z = {Z:+.2f}")
+    ax2.axvline(0, color="#64748b", linestyle=":", linewidth=1.0)
+
+    # Annotation box for Z-score
+    ax2.text(0.04, 0.92, f"Z = {Z:+.2f}\nPercentile = {prob_cdf*100:.1f}%", transform=ax2.transAxes, fontsize=8,
+             verticalalignment="top", bbox=dict(boxstyle="round,pad=0.4", facecolor="#111a2e", edgecolor="#38bdf8", alpha=0.9))
+
+    ax2.set_xlim(-3.5, 3.5)
+    ax2.set_ylim(0, 0.44)
+    ax2.set_xlabel("Standard Deviations (Z)", fontsize=9, color="#f8fafc", fontweight="bold")
+    ax2.set_ylabel("Probability Density f(z)", fontsize=9, color="#f8fafc", fontweight="bold")
+    ax2.set_title("Standard Normal Curve N(0,1)", fontsize=10.5, fontweight="bold", color="#f8fafc", pad=12)
+    ax2.tick_params(colors="#cbd5e1", labelsize=8)
+    ax2.grid(True)
+    ax2.legend(loc="upper right", fontsize=7.2, facecolor="#111a2e", edgecolor="#283548", framealpha=0.95)
+
+    plt.tight_layout()
+    st.pyplot(fig2)
+    plt.close(fig2)
+
+# ------------------------------------------------------------------------------
+# Chart 3: Empirical Risk Probability Breakdown P(E) (Fixed 3-Tier Bar)
+# ------------------------------------------------------------------------------
+with chart_col3:
+    fig3, ax3 = plt.subplots(figsize=(5.5, 4.2), dpi=150)
+    fig3.patch.set_facecolor("#162032")
+    ax3.set_facecolor("#162032")
+
+    tier_labels = ["Low Risk [1-2]", "Moderate [3]", "High Risk [4-5]"]
+    tier_probs = [p_low * 100, p_mod * 100, p_high * 100]
+    tier_counts = [count_low, count_mod, count_high]
+    tier_colors = ["#10b981", "#f59e0b", "#ef4444"]
+
+    y_pos = np.arange(len(tier_labels))
+    h_bars = ax3.barh(y_pos, tier_probs, color=tier_colors, edgecolor="#0b1120", linewidth=0.8, height=0.55)
+
+    ax3.set_xlim(0, 105)
+    ax3.set_yticks(y_pos)
+    ax3.set_yticklabels(tier_labels, fontsize=8.5, color="#f8fafc", fontweight="bold")
+    ax3.set_xlabel("Empirical Probability Percentage (%)", fontsize=9, color="#f8fafc", fontweight="bold")
+    ax3.set_title("Empirical Risk Proportions P(E)", fontsize=10.5, fontweight="bold", color="#f8fafc", pad=12)
+    ax3.tick_params(colors="#cbd5e1", labelsize=8)
+    ax3.grid(axis="x")
+
+    for bar, pct, cnt in zip(h_bars, tier_probs, tier_counts):
+        w = bar.get_width()
+        ax3.text(w + 2.5, bar.get_y() + bar.get_height() / 2.0, f"P = {pct/100:.2f} ({cnt}/10)",
+                 ha="left", va="center", fontsize=8, color="#f8fafc", fontweight="bold")
+
+    plt.tight_layout()
+    st.pyplot(fig3)
+    plt.close(fig3)
+
+# ==============================================================================
+# 9. SECTION 4: REDESIGNED BILINGUAL RECOMMENDATIONS PANEL
+# ==============================================================================
+st.markdown("---")
+if show_en and show_ar:
+    sec4_title = "Section 4: Strategic Prevention Directives | رابعاً: التقييم الإحصائي والتوصيات الوقائية"
+elif show_ar:
+    sec4_title = "رابعاً: التقييم الإحصائي والتوجيهات الوقائية لمكافحة التطرف"
+else:
+    sec4_title = "Section 4: Strategic Prevention Directives & Assessment"
+
+st.subheader(sec4_title)
+
+if X_bar < 2.50:
+    card_tier = "rec-card-low"
+    header_color = "#10b981"
+    badge_en = f"CATEGORY 1: ADVANCED INTELLECTUAL IMMUNITY (SCORE: {X_bar:.2f})"
+    badge_ar = f"المستوى الأول: وعي فكري متقدم ومناعة قوية ضد التطرف (الدرجة: {X_bar:.2f})"
+
+    bullets_en = [
+        "<strong>1. Statistical Diagnosis:</strong> Quantitatively demonstrates robust intellectual immunity and resilient analytical judgment against extremist propaganda and disinformation.",
+        "<strong>2. Digital & Intellectual Habits:</strong> Maintain rigorous source verification and continue abstaining from unverified, emotionally charged online forums.",
+        "<strong>3. University & Community Role:</strong> Engage as an active peer advocate in university workshops and civic initiatives to foster moderate discourse."
+    ]
+
+    bullets_ar = [
+        "<strong>1. التشخيص الإحصائي:</strong> تشير الدرجة إلى وعي فكري مرتفع ومناعة قوية ضد خطابات التطرف والشائعات المضللة.",
+        "<strong>2. السلوك الرقمي:</strong> الاستمرار في التحقق النقدي من المصادر وعدم التفاعل مع الصفحات المشبوهة أو السرديات الاستقطابية.",
+        "<strong>3. الدور المجتمعي:</strong> المساهمة الإيجابية في نشر قيم الحوار والاعتدال والتفكير الموضوعي داخل البيئة الجامعية والمجتمعية."
+    ]
+
+elif X_bar <= 3.50:
+    card_tier = "rec-card-mod"
+    header_color = "#f59e0b"
+    badge_en = f"CATEGORY 2: MODERATE VULNERABILITY REQUIRING REINFORCEMENT (SCORE: {X_bar:.2f})"
+    badge_ar = f"المستوى الثاني: قابلية متوسطة تتطلب تعزيز التحصين المعرفي (الدرجة: {X_bar:.2f})"
+
+    bullets_en = [
+        "<strong>1. Statistical Diagnosis:</strong> Metrics reflect moderate vulnerability indicators, suggesting occasional susceptibility to emotional exploitation or unverified crisis narratives.",
+        "<strong>2. Preventative Actions:</strong> Disengage from insular or anonymous ideological communication channels and verify news through authenticated institutional portals.",
+        "<strong>3. University & Family Engagement:</strong> Participate regularly in collegiate dialogue circles and academic seminars designed to dismantle radical recruitment methodologies."
+    ]
+
+    bullets_ar = [
+        "<strong>1. التشخيص الإحصائي:</strong> وجود مؤشرات متوسطة تستدعي رفع مستوى الحذر الفكري والوعي بطرق الاستقطاب الرقمي.",
+        "<strong>2. التوعية الوقائية:</strong> تجنب المجموعات المغلقة أو مجهولة المصدر، والتثبت من الأخبار عبر القنوات الرسمية المعتمدة.",
+        "<strong>3. الدور الأسري والجامعي:</strong> زيادة المشاركة في الندوات الفكرية والحوارات المفتوحة التي تعزز التفكير النقدي وتفكيك الأفكار المتطرفة."
+    ]
 
 else:
-    # -------------------------------------------------------------
-    # Top KPI Metrics Cards
-    # -------------------------------------------------------------
-    b_stat = results["decision"]["baseline"]
-    full_scale_alpha = results["reliability"].get("full_scale", {}).get("alpha", 0.0)
+    card_tier = "rec-card-high"
+    header_color = "#ef4444"
+    badge_en = f"CATEGORY 3: ELEVATED RISK INDEX REQUIRING PROMPT INTERVENTION (SCORE: {X_bar:.2f})"
+    badge_ar = f"المستوى الثالث: قابلية مرتفعة تستدعي تدخلاً توعوياً عاجلاً (الدرجة: {X_bar:.2f})"
 
-    m1, m2, m3, m4 = st.columns(4)
-    with m1:
-        st.metric(label=L["kpi_sample"], value=f"{results['quality_summary']['final_count']}")
-    with m2:
-        st.metric(
-            label=L["kpi_mean"],
-            value=f"{b_stat['mean_score']} / 5.0",
-            delta=f"95% CI: [{b_stat['ci_95'][0]}, {b_stat['ci_95'][1]}]",
-            delta_color="off",
-        )
-    with m3:
-        st.metric(
-            label=L["kpi_alpha"],
-            value=f"{full_scale_alpha:.3f}",
-            delta=results["reliability"].get("full_scale", {}).get("interpretation", "Good"),
-            delta_color="normal",
-        )
-    with m4:
-        st.metric(
-            label=L["kpi_low"],
-            value=f"{b_stat['pct_low']}%",
-            delta=f"Threshold: {config.LOW_BAND_ESCALATION_PCT}%",
-            delta_color="inverse",
-        )
+    bullets_en = [
+        "<strong>1. Statistical Diagnosis:</strong> Data captures elevated vulnerability, identifying ideological withdrawal, tolerance for radical justifications, and reliance on suspicious entities.",
+        "<strong>2. Immediate Preventative Action:</strong> Cease participation in closed extremist groups immediately and reject manipulative propaganda exploiting socioeconomic grievances.",
+        "<strong>3. Guidance & Institutional Support:</strong> Re-establish open communication with family mentors and university counselors, relying exclusively on recognized educational and national authorities."
+    ]
 
-    # -------------------------------------------------------------
-    # Strategic Status Banner
-    # -------------------------------------------------------------
-    severity = b_stat["final_severity"]
-    if severity == "Critical":
-        banner_bg = "#F8D7DA"
-        banner_color = "#721C24"
-        icon = "🚨"
-    elif severity == "Elevated":
-        banner_bg = "#FFF3CD"
-        banner_color = "#856404"
-        icon = "⚠️"
-    else:
-        banner_bg = "#D4EDDA"
-        banner_color = "#155724"
-        icon = "✅"
+    bullets_ar = [
+        "<strong>1. التشخيص الإحصائي:</strong> تسجل الإجابات مؤشرات مرتفعة للقابلية الفكرية للتأثر بخطابات التشدد أو الانعزال المجتمعي.",
+        "<strong>2. الإجراء الوقائي المباشر:</strong> الابتعاد الفوري عن المنصات والغرف الرقمية التي تبث الكراهية أو تستغل الأزمات للتحريض.",
+        "<strong>3. الدعم الأسري والأكاديمي:</strong> تفعيل قنوات الحوار المباشر مع الأسرة والمرشدين الأكاديميين، والرجوع للمؤسسات الفكرية والوطنية الموثوقة لتصحيح المفاهيم."
+    ]
 
-    escalate_txt = f" | {b_stat['escalation_reason']}" if b_stat["escalated"] else ""
-    st.markdown(
-        f"""
-        <div style="background-color: {banner_bg}; color: {banner_color}; padding: 16px 20px; border-radius: 8px; margin: 15px 0 25px 0; border-left: 6px solid {banner_color};">
-            <h3 style="margin: 0; padding-bottom: 5px; color: {banner_color};">{icon} {b_stat['final_status']} (Severity: {b_stat['final_severity']})</h3>
-            <p style="margin: 0; font-size: 15px;">Mean Community Awareness Score is <b>{b_stat['mean_score']} / 5.000</b>. {b_stat['pct_low']}% in Low Band, {b_stat['pct_moderate']}% in Moderate Band, {b_stat['pct_high']}% in High Band.{escalate_txt}</p>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+# Construct 2-column recommendation layout
+rec_markup = f'<div class="rec-card {card_tier}">'
+rec_markup += f'<div class="rec-header" style="color: {header_color};">'
+if show_en and show_ar:
+    rec_markup += f'{badge_en} | {badge_ar}'
+elif show_ar:
+    rec_markup += f'{badge_ar}'
+else:
+    rec_markup += f'{badge_en}'
+rec_markup += '</div>'
 
-    # -------------------------------------------------------------
-    # 9 Tab Layout
-    # -------------------------------------------------------------
-    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9 = st.tabs([
-        f"📊 {L['tab_overview']}",
-        f"🧹 {L['tab_quality']}",
-        f"📈 {L['tab_stats']}",
-        f"🔗 {L['tab_corr']}",
-        f"👥 {L['tab_groups']}",
-        f"🔍 {L['tab_anomalies']}",
-        f"💡 {L['tab_recs']}",
-        f"📝 {L['tab_report']}",
-        f"📥 {L['tab_downloads']}",
-    ])
+col_rec_en, col_rec_ar = st.columns(2)
 
-    # -------------------------------------------------------------
-    # TAB 1: Overview & Radar
-    # -------------------------------------------------------------
-    with tab1:
-        st.subheader("Publication-Grade Awareness Dashboard (300 DPI, 2x2)")
-        dash_path = results["files"]["dashboard"]
-        if os.path.exists(dash_path):
-            st.image(dash_path, use_container_width=True)
+if show_en and show_ar:
+    with col_rec_en:
+        st.markdown('<div class="rec-col-en"><strong>Institutional Directives (English):</strong><br>' + '<br>'.join(bullets_en) + '</div>', unsafe_allow_html=True)
+    with col_rec_ar:
+        st.markdown('<div class="rec-col-ar"><strong>التوجيهات الوقائية (العربية):</strong><br>' + '<br>'.join(bullets_ar) + '</div>', unsafe_allow_html=True)
+elif show_ar:
+    st.markdown('<div class="rec-col-ar">' + '<br>'.join(bullets_ar) + '</div>', unsafe_allow_html=True)
+else:
+    st.markdown('<div class="rec-col-en">' + '<br>'.join(bullets_en) + '</div>', unsafe_allow_html=True)
 
-        st.markdown("---")
-        st.subheader("Five-Dimensional Radar Profile")
-        col_rad, col_leg = st.columns([2, 1])
-        with col_rad:
-            radar_path = results["files"]["radar"]
-            if os.path.exists(radar_path):
-                st.image(radar_path, use_container_width=True)
-        with col_leg:
-            st.markdown("#### Dimensional Mean Scores")
-            dim_order = results["cleaned_df"][[f"dim_{d}" for d in config.DIMENSIONS]].mean()
-            for d in config.DIMENSIONS:
-                st.write(f"- **{d}:** {dim_order[f'dim_{d}']:.2f} / 5.0")
-            st.info("The purple line indicates the target benchmark (4.0/5.0). Dimensions with depressed polygon vertices represent acute vulnerabilities.")
+st.markdown('</div>', unsafe_allow_html=True)
 
-    # -------------------------------------------------------------
-    # TAB 2: Data Quality Audit
-    # -------------------------------------------------------------
-    with tab2:
-        st.subheader("Automated Ingestion & Cleaning Audit")
-        q_sum = results["quality_summary"]
-        q1, q2, q3, q4, q5 = st.columns(5)
-        q1.metric("Raw Loaded", q_sum["raw_count"])
-        q2.metric("Duplicates Removed", q_sum["duplicate_count"])
-        q3.metric("Out-of-Range Coerced", q_sum["out_of_range_count"])
-        q4.metric("Dropped (>20% Missing)", q_sum["dropped_missing_count"])
-        q5.metric("Median Imputed Cells", q_sum.get("imputed_cells_count", 0))
-
-        st.markdown("#### Item Missingness Rate Before Imputation")
-        miss_df = pd.DataFrame(
-            list(q_sum["item_missing_pct_before_imputation"].items()),
-            columns=["Survey Item", "Missing %"],
-        ).sort_values(by="Missing %", ascending=False)
-        st.dataframe(miss_df.style.format({"Missing %": "{:.2f}%"}), use_container_width=True)
-
-    # -------------------------------------------------------------
-    # TAB 3: Descriptive & Psychometrics
-    # -------------------------------------------------------------
-    with tab3:
-        st.subheader("Scale Descriptive Statistics")
-        desc_df = results["descriptive"]
-        st.dataframe(desc_df, use_container_width=True)
-
-        st.markdown("---")
-        st.subheader("Psychometric Internal Consistency (Cronbach's α)")
-        rel_records = []
-        for s_name, r_info in results["reliability"].items():
-            rel_records.append({
-                "Scale / Dimension": s_name,
-                "Number of Items": r_info.get("k_items", 0),
-                "Cronbach Alpha (α)": r_info.get("alpha", np.nan),
-                "Benchmark Interpretation": r_info.get("interpretation", "N/A"),
-            })
-        rel_df = pd.DataFrame(rel_records)
-        st.dataframe(rel_df, use_container_width=True)
-
-        if os.path.exists(results["files"]["pca_scree"]):
-            st.markdown("---")
-            st.subheader("Principal Component Analysis (PCA) Scree Plot")
-            st.image(results["files"]["pca_scree"], use_container_width=True)
-
-    # -------------------------------------------------------------
-    # TAB 4: Correlations & Media
-    # -------------------------------------------------------------
-    with tab4:
-        st.subheader("Interactive Spearman Correlation Matrix")
-        s_pack = results["corr_spearman"]
-        corr_matrix = s_pack["matrix"]
-
-        clean_labels = [
-            c.replace("dim_", "").replace("_", " ").title() if c != "overall_awareness_score" else "Overall Awareness"
-            for c in corr_matrix.columns
-        ]
-
-        # Interactive Plotly Heatmap
-        fig_heat = px.imshow(
-            corr_matrix,
-            labels=dict(x="Dimension", y="Dimension", color="Spearman ρ"),
-            x=clean_labels,
-            y=clean_labels,
-            color_continuous_scale="RdBu_r",
-            zmin=-0.5,
-            zmax=1.0,
-            text_auto=".2f",
-            title="Interactive Dimension Correlation Heatmap",
-        )
-        fig_heat.update_layout(height=550)
-        st.plotly_chart(fig_heat, use_container_width=True)
-
-        c_top, c_med = st.columns(2)
-        with c_top:
-            st.markdown("#### Top Strongest Correlation Pairs")
-            top_p_df = pd.DataFrame(s_pack["top_pairs"])[["var1", "var2", "r", "sig"]]
-            st.dataframe(top_p_df, use_container_width=True)
-        with c_med:
-            st.markdown("#### Media Exposure Interrelationships")
-            med_df = pd.DataFrame(s_pack["media_exposure_relations"])[["target_variable", "spearman_rho", "sig"]]
-            st.dataframe(med_df, use_container_width=True)
-
-    # -------------------------------------------------------------
-    # TAB 5: Demographic Disparities
-    # -------------------------------------------------------------
-    with tab5:
-        st.subheader("Inferential Demographic Disparity Analysis")
-        group_df = results["group_tests"]
-
-        # Demographic filter
-        demo_cols = list(config.DEMOGRAPHIC_COLUMNS.values())
-        selected_demo = st.selectbox("Select Demographic Variable for Breakdown:", options=demo_cols, index=1)
-
-        # Interactive breakdown chart
-        clean_d = results["cleaned_df"]
-        if selected_demo in clean_d.columns:
-            group_summary = clean_d.groupby(selected_demo, observed=True)["overall_awareness_score"].agg(["mean", "std", "count"]).reset_index()
-            group_summary["ci"] = 1.96 * (group_summary["std"] / np.sqrt(group_summary["count"]))
-
-            fig_bar = px.bar(
-                group_summary,
-                x=selected_demo,
-                y="mean",
-                error_y="ci",
-                color="mean",
-                color_continuous_scale="Blues",
-                labels={"mean": "Mean Awareness Score (1-5)", selected_demo: selected_demo.replace("_", " ").title()},
-                title=f"Mean Overall Awareness Score by {selected_demo.replace('_', ' ').title()} (with 95% CIs)",
-            )
-            fig_bar.add_hline(y=config.TARGET_SCORE, line_dash="dash", line_color="purple", annotation_text="Target (4.0)")
-            fig_bar.add_hline(y=config.LOW_MAX, line_dash="dot", line_color="crimson", annotation_text="Low Limit (2.33)")
-            fig_bar.update_layout(height=420)
-            st.plotly_chart(fig_bar, use_container_width=True)
-
-        st.markdown("#### Inferential Hypothesis Test Table")
-        # Highlight significant rows
-        st.dataframe(
-            group_df.style.apply(
-                lambda row: ["background-color: #D4EDDA" if row["is_significant"] else "" for _ in row],
-                axis=1,
-            ),
-            use_container_width=True,
-        )
-
-        if os.path.exists(results["files"]["boxplots"]):
-            st.markdown("---")
-            st.subheader("Demographic Score Boxplots")
-            st.image(results["files"]["boxplots"], use_container_width=True)
-
-    # -------------------------------------------------------------
-    # TAB 6: Anomaly & Sensitivity
-    # -------------------------------------------------------------
-    with tab6:
-        st.subheader("Data Integrity & Anomaly Screening")
-        susp_df = results["outliers_table"]
-        st.write(f"Flagged Suspicious Respondents: **{len(susp_df)}** ({len(susp_df)/len(results['cleaned_df'])*100:.1f}% of cohort)")
-
-        if not susp_df.empty:
-            st.dataframe(susp_df, use_container_width=True)
-        else:
-            st.success("No suspicious straight-lining or contradictory response patterns detected.")
-
-        st.markdown("---")
-        st.subheader("Sensitivity Analysis (Full Sample vs Clean Subset)")
-        sens = results["sensitivity"]
-        if sens:
-            s_comp = pd.DataFrame([
-                {"Metric": "Sample Size (n)", "Full Sample": sens["n_full"], "Clean Subset": sens["n_clean"], "Delta": -sens["n_removed"]},
-                {"Metric": "Mean Awareness Score", "Full Sample": sens["mean_full"], "Clean Subset": sens["mean_clean"], "Delta": sens["mean_delta"]},
-                {"Metric": "Cronbach's Alpha (α)", "Full Sample": sens["alpha_full"], "Clean Subset": sens["alpha_clean"], "Delta": sens["alpha_delta"]},
-                {"Metric": "Awareness Status", "Full Sample": sens["baseline_status"], "Clean Subset": sens["clean_status"], "Delta": "Unchanged" if not sens["status_changed"] else "CHANGED"},
-            ])
-            st.table(s_comp)
-            if sens["conclusion_stable"]:
-                st.success("✅ **Robust Stability Confirmed:** Strategic status and dimensional rank ordering remain identical after excluding outliers.")
-            else:
-                st.warning("⚠️ **Sensitivity Alert:** Diagnostic outcomes are sensitive to aberrant responses.")
-
-    # -------------------------------------------------------------
-    # TAB 7: Strategic Recommendations
-    # -------------------------------------------------------------
-    with tab7:
-        st.subheader("Prioritized National Interventions")
-        st.caption("Ordered by Quantitative Priority Score = (Target [4.0] - Dimension Mean) x (1 + % in Low Band / 100)")
-
-        for rec in results["decision"]["recommendations"]:
-            with st.expander(f"📌 Priority: {rec['title']} (Score: {rec['priority_score']:.2f})"):
-                col_r1, col_r2 = st.columns([3, 1])
-                with col_r1:
-                    st.markdown(f"**Lead Responsible Agencies:** `{rec['stakeholders']}`")
-                    st.markdown("**Strategic Actions:**")
-                    for act in rec["interventions"]:
-                        st.write(f"- {act}")
-                with col_r2:
-                    st.metric("Dimension Mean", f"{rec['dimension_mean']:.2f}")
-                    st.metric("In Low Band", f"{rec['pct_low_band']}%")
-
-        st.markdown("---")
-        st.subheader("Three-Horizon Implementation Roadmap")
-        plan = results["decision"]["action_plan"]
-        h1_items = [p for p in plan if "Horizon 1" in p["horizon"]]
-        h2_items = [p for p in plan if "Horizon 2" in p["horizon"]]
-        h3_items = [p for p in plan if "Horizon 3" in p["horizon"]]
-
-        c_h1, c_h2, c_h3 = st.columns(3)
-        with c_h1:
-            st.markdown("### Horizon 1: Immediate\n*(0–3 Months)*")
-            for item in h1_items:
-                st.info(f"**{item['action']}**\n\n- Owner: {item['lead_owner']}\n- KPI: {item['kpi']}")
-        with c_h2:
-            st.markdown("### Horizon 2: Short-Term\n*(3–12 Months)*")
-            for item in h2_items:
-                st.warning(f"**{item['action']}**\n\n- Owner: {item['lead_owner']}\n- KPI: {item['kpi']}")
-        with c_h3:
-            st.markdown("### Horizon 3: Long-Term\n*(1–3 Years)*")
-            for item in h3_items:
-                st.success(f"**{item['action']}**\n\n- Owner: {item['lead_owner']}\n- KPI: {item['kpi']}")
-
-    # -------------------------------------------------------------
-    # TAB 8: Executive Report
-    # -------------------------------------------------------------
-    with tab8:
-        st.subheader("Complete Executive Decision Report")
-        st.markdown(results["report_md"])
-
-    # -------------------------------------------------------------
-    # TAB 9: Export Center
-    # -------------------------------------------------------------
-    with tab9:
-        st.subheader("Artifact & Report Download Center")
-        st.write("Download publication figures, multi-tab Excel workbooks, and executive decision briefs.")
-
-        d1, d2 = st.columns(2)
-
-        with d1:
-            st.markdown("#### Analytical Reports & Workbooks")
-            # Excel
-            excel_path = results["files"]["excel"]
-            if os.path.exists(excel_path):
-                with open(excel_path, "rb") as ef:
-                    st.download_button(
-                        label="📊 Download Master Excel Workbook (.xlsx)",
-                        data=ef.read(),
-                        file_name="JSSAA_results.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                        use_container_width=True,
-                    )
-
-            # PDF
-            pdf_path = results["files"]["report_pdf"]
-            if pdf_path and os.path.exists(pdf_path):
-                with open(pdf_path, "rb") as pf:
-                    st.download_button(
-                        label="📄 Download Executive Report PDF (.pdf)",
-                        data=pf.read(),
-                        file_name="JSSAA_executive_report.pdf",
-                        mime="application/pdf",
-                        use_container_width=True,
-                    )
-
-            # Markdown Report
-            st.download_button(
-                label="📝 Download Executive Report (.md)",
-                data=results["report_md"],
-                file_name="JSSAA_executive_report.md",
-                mime="text/markdown",
-                use_container_width=True,
-            )
-
-            # Plain Text Report
-            st.download_button(
-                label="📄 Download Executive Report (.txt)",
-                data=results["report_text"],
-                file_name="JSSAA_executive_report.txt",
-                mime="text/plain",
-                use_container_width=True,
-            )
-
-            # Analysis Log
-            log_path = results["files"]["log"]
-            if os.path.exists(log_path):
-                with open(log_path, "r", encoding="utf-8") as lf:
-                    st.download_button(
-                        label="📋 Download Execution Runtime Log (.txt)",
-                        data=lf.read(),
-                        file_name="JSSAA_analysis_log.txt",
-                        mime="text/plain",
-                        use_container_width=True,
-                    )
-
-        with d2:
-            st.markdown("#### High-Resolution Figures & Plots (300 DPI)")
-            # Dashboard PNG
-            if os.path.exists(results["files"]["dashboard"]):
-                with open(results["files"]["dashboard"], "rb") as img_f:
-                    st.download_button(
-                        label="🖼️ Download 2x2 Dashboard Image (.png)",
-                        data=img_f.read(),
-                        file_name="jordan_awareness_dashboard.png",
-                        mime="image/png",
-                        use_container_width=True,
-                    )
-
-            # Radar Chart PNG
-            if os.path.exists(results["files"]["radar"]):
-                with open(results["files"]["radar"], "rb") as img_f:
-                    st.download_button(
-                        label="🎯 Download Radar Profile (.png)",
-                        data=img_f.read(),
-                        file_name="dimension_radar_chart.png",
-                        mime="image/png",
-                        use_container_width=True,
-                    )
-
-            # Boxplots PNG
-            if os.path.exists(results["files"]["boxplots"]):
-                with open(results["files"]["boxplots"], "rb") as img_f:
-                    st.download_button(
-                        label="📦 Download Demographic Boxplots (.png)",
-                        data=img_f.read(),
-                        file_name="demographic_boxplots.png",
-                        mime="image/png",
-                        use_container_width=True,
-                    )
-
-            # Perceived vs Actual Scatter PNG
-            if os.path.exists(results["files"]["scatter"]):
-                with open(results["files"]["scatter"], "rb") as img_f:
-                    st.download_button(
-                        label="📈 Download Perceived vs Actual Scatter (.png)",
-                        data=img_f.read(),
-                        file_name="perceived_vs_actual_scatter.png",
-                        mime="image/png",
-                        use_container_width=True,
-                    )
-
-            # PCA Scree PNG
-            if results["files"]["pca_scree"] and os.path.exists(results["files"]["pca_scree"]):
-                with open(results["files"]["pca_scree"], "rb") as img_f:
-                    st.download_button(
-                        label="📉 Download PCA Scree Plot (.png)",
-                        data=img_f.read(),
-                        file_name="pca_scree_plot.png",
-                        mime="image/png",
-                        use_container_width=True,
-                    )
-
-# ==========================================
-# Footer & Research Governance
-# ==========================================
-st.markdown("---")
-st.markdown(
-    f"<div style='text-align: center; color: gray; font-size: 13px;'>{L['footer_ethics']}</div>",
-    unsafe_allow_html=True,
-)
-
+# ==============================================================================
+# 10. SYSTEM FOOTER
+# ==============================================================================
+st.markdown("""
+<div style="border-top: 1px solid #1e293b; margin-top: 40px; padding: 20px 0; text-align: center; color: #64748b; font-size: 11.5px; line-height: 1.6;">
+    Applied Statistics & Probability for Engineers | مساق الإحصاء والاحتمالات للمهندسين (2026)<br>
+    Academic & Institutional Decision-Support System for Youth Awareness & Extremism Risk Modeling
+</div>
+""", unsafe_allow_html=True)
